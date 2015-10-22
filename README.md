@@ -51,7 +51,7 @@ Optional arguments are:
 -i: impurity function: threashold-Pairs(0,default), entropy(1), powers(2).
 -a: alpha, threashold for impurity function (default: 0).
 -o: set to 0 if oob samples are NOT used (default); set to 1 if oob samples are used ; set to 2 if oob samples AND validation samples are used for determining node label for test points.
--c: cost vector input file name, one feature cost per row.
+-c: cost vector input file name, one feature cost per row. Assume uniform feature cost if cost input file not supplied.
 -R: run ranking (default classification).
 
 data_input_file format: 
@@ -69,7 +69,7 @@ errPrec3: cumulate training data distributions at the corresponding leaves for a
 
 EXAMPLE:
 BudgetRF.exe -f 50 -t 10 -p 5 -m 2 -o 0 mbne_tiny_tr mbne_tiny_tv mbne_out_tv mbne_tiny_te mbne_out_te
-BudgetRF.exe -f 519 -t 10 -p 2 -m 2 -o 0 yahoo_cssm_tr yahoo_cssm_te yahoo_outTe
+BudgetRF.exe -f 519 -t 10 -p 2 -m 2 -o 0 -c yahoo_cs_cost yahoo_cssm_tr yahoo_cssm_te yahoo_outTe
 
 !IMPORTANT! always provide the training input data file name, followed by validation input data file name, validation output file name, test input file name, test output file name.
 The validation input/output files are optional.
