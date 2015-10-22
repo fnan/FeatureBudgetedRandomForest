@@ -1,4 +1,26 @@
 # FeatureBudgetedRandomForest
+The MIT License (MIT)
+
+Copyright (c) 2015 Feng Nan (fnan@bu.edu)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 Code for paper "Feature-Budgeted Random Forest" ICML 2015. If you have any questions please contact Feng Nan (fnan@bu.edu).
 Please cite us:
 @inproceedings{icml2015_nan15,
@@ -13,7 +35,6 @@ Please cite us:
 } 
 Some parts of the code taken from the RT-Rank project: https://sites.google.com/site/rtranking/home
 implemented by Ananth Mohan (mohana@go.wustl.edu) and Zheng Chen, under the supervision of Dr. Kilian Weinberger.
-
    
 INSTALL: 
 The code was built on Visual Studio 2012. Boost library is needed.
