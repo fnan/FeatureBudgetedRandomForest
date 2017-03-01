@@ -21,8 +21,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Code for paper "Feature-Budgeted Random Forest" ICML 2015. If you have any questions please contact Feng Nan (fnan@bu.edu).
+Code for papers "Pruning Random Forests for Prediction on a Budget" NIPS 2016 and "Feature-Budgeted Random Forest" ICML 2015.
+If you have any questions please contact Feng Nan (fnan@bu.edu).
 Please cite us:
+@inproceedings{DBLP:conf/nips/NanWS16,
+  author    = {Feng Nan and
+               Joseph Wang and
+               Venkatesh Saligrama},
+  title     = {Pruning Random Forests for Prediction on a Budget},
+  booktitle = {Advances in Neural Information Processing Systems 29: Annual Conference
+               on Neural Information Processing Systems 2016, December 5-10, 2016,
+               Barcelona, Spain},
+  pages     = {2334--2342},
+  year      = {2016},
+  crossref  = {DBLP:conf/nips/2016},
+  url       = {http://papers.nips.cc/paper/6250-pruning-random-forests-for-prediction-on-a-budget},
+  timestamp = {Fri, 16 Dec 2016 19:45:58 +0100},
+  biburl    = {http://dblp.uni-trier.de/rec/bib/conf/nips/NanWS16},
+  bibsource = {dblp computer science bibliography, http://dblp.org}
+}
 @inproceedings{icml2015_nan15,
    Publisher = {JMLR Workshop and Conference Proceedings},
    title="Feature-Budgeted Random Forest",
@@ -33,12 +50,16 @@ Please cite us:
    pages="1983-1991",
    url="http://jmlr.org/proceedings/papers/v37/nan15.pdf"
 } 
+
 Some parts of the code taken from the RT-Rank project: https://sites.google.com/site/rtranking/home
 implemented by Ananth Mohan (mohana@go.wustl.edu) and Zheng Chen, under the supervision of Dr. Kilian Weinberger.
    
 INSTALL: 
-The code was built on Visual Studio 2012. Boost library is needed.
-To install Boost, please refer to: http://sourceforge.net/projects/boost/files/boost/1.59.0/
+The code was built on Visual Studio 2012/2013. 
+Required libraries:
+1. Cplex: https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/ (used to solve network flow problems)
+2. lpsolve: https://sourceforge.net/projects/lpsolve/ (used to define LP problems)
+
 
 INPUTS:
 The required input arguments are:
@@ -46,13 +67,18 @@ The required input arguments are:
 
 Optional arguments are:
 -m: number of classes(labels).
--t: number of trees for random forest.
+-t: number of trees for random forest. (must be multiples of number of threads used)
 -p: number of processors/threads to use.
 -i: impurity function: threashold-Pairs(0,default), entropy(1), powers(2).
 -a: alpha, threashold for impurity function (default: 0).
 -o: set to 0 if oob samples are NOT used (default); set to 1 if oob samples are used ; set to 2 if oob samples AND validation samples are used for determining node label for test points.
 -c: cost vector input file name, one feature cost per row. Assume uniform feature cost if cost input file not supplied.
 -R: run ranking (default classification).
+-k: number of randomly selected features to build each tree (default -1: use all features).
+Added for Pruning:
+-u: error-feature cost trade off parameter. 0.0 if no pruning; >0.0 to perform pruning. Larger value leads to heavier pruning.
+-b: learning rate base parameter for dual ascend step in pruning; larger value leads to larger step size. default: 500.
+-g: costgroup file, optional.
 
 data_input_file format: 
 Classification - each line represent an example, label comes in the first column, followed by featureID:featureValue with white spaces in between.
@@ -62,14 +88,27 @@ cost_input_file format:
 Cost of each feature appears in each row. Number of rows equal number of features.
 
 OUTPUTS:
-Expected error for classification or precision for ranking + expected feature cost.
+-Expected error for classification or precision for ranking + expected feature cost.
 errPrec1: predict test example label for each tree using training data distribution at the corresponding leaf, take majority label as final prediction.
 errPrec2: predict test example label for each tree using out-of-bag data distribution at the corresponding leaf, take majority label as final prediction.
 errPrec3: cumulate training data distributions at the corresponding leaves for all trees, take label with highest probability
 
+-featMatrix files: contains the feature usage matrix: (i,j)th element is the number of times example i uses feature j.
+
+-proba_pred files: contains the predicted probabilities of each example in each class.
+
+-tree file: tree structure file
+
+-Standard output for pruning iterations: primal objective | dual objective | duality gap.
+
 EXAMPLE:
-BudgetRF.exe -f 50 -t 10 -p 5 -m 2 -o 0 mbne_tiny_tr mbne_tiny_tv mbne_out_tv mbne_tiny_te mbne_out_te
-BudgetRF.exe -f 519 -t 10 -p 2 -m 2 -o 0 -c yahoo_cs_cost yahoo_cssm_tr yahoo_cssm_te yahoo_outTe
+To build the forest:
+>BudgetRF.exe -f 50 -t 10 -p 5 -m 2 -o 0 mbne_tiny_tr mbne_tiny_tv mbne_out_tv mbne_tiny_te mbne_out_te
+To prune the forest:
+>BudgetRF.exe -f 50 -t 10 -p 5 -m 2 -o 0 -u 0.02 mbne_tiny_tr mbne_tiny_tv mbne_out_tv mbne_tiny_te mbne_out_te
+To build the forest for ranking:
+>BudgetRF.exe -f 519 -t 10 -p 2 -m 2 -o 0 -c yahoo_cs_cost yahoo_cssm_tr yahoo_cssm_te yahoo_outTe
 
 !IMPORTANT! always provide the training input data file name, followed by validation input data file name, validation output file name, test input file name, test output file name.
-The validation input/output files are optional.
+The validation input/output files are optional. The tree file needs to be available to run pruning. So first run BudgetRF without pruning (to build the forest and generate tree file), then with pruning. 
+

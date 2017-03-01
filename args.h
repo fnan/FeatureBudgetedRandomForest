@@ -5,30 +5,36 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "getopt.h"
-#include "tupleW.h"
+
 #include <vector>
-using namespace std;
+
+#include "tupleW.h"
+
+using std::vector;
 
 typedef vector<tupleW*> data_t;
 typedef vector< vector<tupleW*> > vec_data_t;
 typedef vector<double> preds_t;
 typedef vector< vector<double> > vec_preds_t;
 
-enum alg_t { ALG_CLASSIFICATION,ALG_RANK};
+enum alg_t { ALG_CLASSIFICATION,ALG_RANK,ALG_BOOST_MAXSPLIT, ALG_BOOST_EXPSPLIT};
 enum alg_loss { ALG_HP, ALG_ENTROPY, ALG_POWER };
 //enum alg_pred { ALG_MEAN, ALG_MODE };
 
 struct args_t
 {
   int features;
+  int sensors;
   int trees;
   int processors;
   double alpha;
   int depth;
+  int gateDepth;
   int kfeatures;
   char* train_file;
   char* cost_file;
+  char* costgroup_file;
+  char* tree_file;
   vector<char*> test_files;
   vector<char*> test_outs;
   int num_test;
@@ -39,8 +45,17 @@ struct args_t
   int missing;
   int ntra;
   int num_c; //number of classes
+  double prune; //if negative, train tree; if positive, serve as lambda trade-off parameter if pruneMethod is 0 or 1; serve as number of internal nodes to keep if pruneMethod is 2
   vector<double> Costs;
+  vector<int> Costgroup;
+  vector<double> CostSensors;
   int oob; //include out of bag samples in tree leaves
+  int pruneMethod; //0: (default) prune as a forest, 1: prune individual tree, 2: cost-complexity pruning
+  bool analysis; //0: (default) not perform feature analysis, 1: perform feature analysis, requires tree input files
+  int incre; //incremental (mini-batch) pruning size. Default 0.
+  int maxNumWeakLearners; //maximum number of weak learners in gating function
+  double bagging_rate; //subsampling ratio to build each tree
+  double learning_rate_base; // learning rate in the primal-dual pruning algorithm = 1/(t+learning_rate_base)
 };
 
 static void init_args(args_t& a) {
@@ -48,67 +63,29 @@ static void init_args(args_t& a) {
   a.trees = 1;
   a.alpha = 0.0;
   a.features = 0;
+  a.sensors =0;
   a.depth = 1000;
+  a.gateDepth = 3;
   a.num_test = 1;
   a.kfeatures = -1;
   a.alg = ALG_CLASSIFICATION;
-  a.verbose = 1;
+  a.verbose = 0;
   a.rounds = 1;
   a.loss = ALG_HP;
   a.missing = 0;
   a.num_c=2;
+  a.prune=-1;
   a.cost_file=NULL;
-  a.oob=0; // set to 0 if oob samples are NOT used (default); set to 1 if oob samples are used ; set to 2 if oob samples AND validation samples are used for determining node label for test points
-}
+  a.costgroup_file=NULL;
+  a.oob=0; // set to 1 if oob samples are used for calculating pruning error; set to 2 if oob samples are used for calculating pruning AND determining node label for test points
+  a.pruneMethod=0;
+  a.analysis=0;
+  a.incre=0;
+  a.maxNumWeakLearners=0; 
+  a.bagging_rate = 1.0;
+  a.learning_rate_base = 500;
+};
 
-
-static int get_args(int argc, char* argv[], args_t& args) {
-  int index, c, i=0;
-
-  // option arguments
-  opterr = 0;
-  while ((c = getopt (argc, argv, "a:d:i:t:m:p:f:k:r:c:o:vR")) != -1)
-    switch (c) {
-      case 'a': args.alpha = atof(optarg); break;
-      case 'm': args.num_c = atoi(optarg); break;
-      case 'd':	args.depth = atoi(optarg); break;
-	  case 'i': args.loss = (alg_loss)atoi(optarg); break;
-      case 't':	args.trees = atoi(optarg); break;
-      case 'p':	args.processors = atoi(optarg); break;
-      case 'o': args.oob = atoi(optarg); break;
-      case 'f':	args.features = atoi(optarg)+1; 
-		  for(int j=0;j<args.features;j++)
-			  args.Costs.push_back(1.0);
-		  break;
-      case 'k':	args.kfeatures = atoi(optarg); break;
-      case 'r': args.rounds = atoi(optarg); break;
-      case 'c': args.cost_file = (optarg); break; //cost file is optional
-      case 'R': args.alg = ALG_RANK; break;
-      case 'v': args.verbose = 1; break;
-      case '?':
-	if (optopt == 'c')
-	  fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-	else if (isprint (optopt))
-	  fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-	else
-	  fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-	return 0;
-      default:
-	return 0;
-      }
-
-  // non option arguments
-  if (argc-optind < 3)
-    return 0;
-  for (index = optind; index < argc; index++) {
-    if (i==0) args.train_file = argv[index];
-    else if (i%2) args.test_files.push_back(argv[index]);
-    else args.test_outs.push_back(argv[index]);
-    i++;
-  }
-  args.num_test = args.test_files.size();
-
-  return 1;
-}
+int get_args(int argc, char* argv[], args_t& args);
 
 #endif

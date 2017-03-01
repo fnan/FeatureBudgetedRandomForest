@@ -1,35 +1,41 @@
-//main.h
-
-//#include "args.h"
 #include "BudgetForest.h"
-//#include "tupleW.h"
 
 #include <iostream>
 #include <vector>
 #include <cmath>
+
+#include "getopt.h"
+
 using namespace std;
-
-//#include <boost\bind.hpp>
-//#include <boost\thread\thread.hpp>
-
-//using namespace boost;
 
 vector<vector<int> > fInds;
 
 // given a set of files, read them into train and test vectors
 // if cost_file is specified in args, read cost vector into args.Costs
-int load_data(vector<tupleW*>& train, vector< vector<tupleW*> >& test, args_t& myargs) {
+int load_data(vector<tupleW*>& train, vector< vector<tupleW*> >& test, args_t& myargs, int r) {
 	int numfeatures = myargs.features;
 	int missing = myargs.missing;
 
 	fprintf(stderr, "loading training data...");
-	if (!tupleW::read_input(train, myargs.train_file, numfeatures, 1, myargs.alg==ALG_RANK))
+	char train_file[100];	
+	if(myargs.rounds>1)
+		sprintf(train_file, "%s%d",myargs.train_file,r);
+	else
+		sprintf(train_file, "%s",myargs.train_file);
+
+	if (!tupleW::read_input(train, train_file, numfeatures, 1, myargs.alg==ALG_RANK))
 		return 0;
 	fprintf(stderr, "done\n");
-	fprintf(stderr, "loading test data...");
+	fprintf(stderr, "loading test data...");	
+
 	for (int i=0; i<myargs.num_test; i++) {
+		char test_file[100];
+		if(myargs.rounds>1)
+			sprintf(test_file, "%s%d",myargs.test_files[i],r);
+		else
+			sprintf(test_file, "%s",myargs.test_files[i]);
 		vector<tupleW*> t;
-		if (!tupleW::read_input(t, myargs.test_files[i], numfeatures, 1, myargs.alg==ALG_RANK))
+		if (!tupleW::read_input(t, test_file, numfeatures, 1, myargs.alg==ALG_RANK))
 			return 0;
 		test.push_back(t);
 	}
@@ -47,11 +53,41 @@ int load_data(vector<tupleW*>& train, vector< vector<tupleW*> >& test, args_t& m
 	int i=1;
 	while(getline(input,strline)){
 		myargs.Costs[i]=atof(strline.c_str());
+		myargs.CostSensors[i]=myargs.Costs[i];
 		i++;
 	}
 	if (i!=myargs.features){
 		fprintf(stderr, "inconsistent number of features in cost_file...");
 		return 0;
+	}
+
+	fprintf(stderr, "loading feature cost group ...");
+	if (myargs.costgroup_file==NULL){
+		fprintf(stderr, "cost file not provided, will use default\n");
+		return 1;	
+	}
+	ifstream input2(myargs.costgroup_file);
+	if (input2.fail())
+		return 0;
+	i=1;
+	while(getline(input2,strline)){
+		myargs.Costgroup[i]=atoi(strline.c_str());
+		i++;
+	}
+	if (i!=myargs.features){
+		fprintf(stderr, "inconsistent number of features in costgroup_file...");
+		return 0;
+	}
+	/* compute the unique sensors */
+	myargs.CostSensors.clear();
+	myargs.CostSensors.push_back(1.0);
+
+	myargs.sensors=1;
+	for(i=1;i<myargs.features;i++){
+		if(myargs.Costgroup[i]>myargs.CostSensors.size()-1){
+			myargs.CostSensors.push_back(myargs.Costs[i]);
+			myargs.sensors++;
+		}
 	}
 	fprintf(stderr, "done\n");
 	return 1;
@@ -95,9 +131,9 @@ void avgprec2(const data_t& data, vector<double>& pred1Rank,vector<double>& pred
 				tmp2.push_back(pair<double, int>(pred2Rank[j], data[j]->label));
 				tmp3.push_back(pair<double, int>(pred3Rank[j], data[j]->label));
 			}
-		std::sort(tmp1.begin(),tmp1.end(), boost::bind(&std::pair<double, int>::first, _1)>boost::bind(&std::pair<double, int>::first, _2));
-		std::sort(tmp2.begin(),tmp2.end(), boost::bind(&std::pair<double, int>::first, _1)>boost::bind(&std::pair<double, int>::first, _2));
-		std::sort(tmp3.begin(),tmp3.end(), boost::bind(&std::pair<double, int>::first, _1)>boost::bind(&std::pair<double, int>::first, _2));
+		std::sort(tmp1.begin(), tmp1.end(), [](const pair<double, int> &left, const pair<double, int> &right){ return left.first > right.first;  });
+		std::sort(tmp2.begin(), tmp2.end(), [](const pair<double, int> &left, const pair<double, int> &right){ return left.first > right.first;  });
+		std::sort(tmp3.begin(), tmp3.end(), [](const pair<double, int> &left, const pair<double, int> &right){ return left.first > right.first;  });
 		ind=0;
 		while(ind<topX && ind<tmp1.size() &&  tmp1[ind].second==1) ind++;
 		if(ind==tmp1.size())
@@ -124,3 +160,4 @@ void avgprec2(const data_t& data, vector<double>& pred1Rank,vector<double>& pred
 	prec2=avg2/nq;
 	prec3=avg3/nq;
 }
+

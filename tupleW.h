@@ -16,18 +16,19 @@ using namespace std;
 #define MY_DBL_MIN (-MY_DBL_MAX)
 #define UNKNOWN MY_DBL_MIN
 
+
 class tupleW // represents a data instance
 {
 public:
 	double* features;
 	int label;
+	int psLabel;
 	double weight;
 	int qid;
 	double pred;
 	int idx;
-	static vector< vector<int> >* sidx;
 
-tupleW(int num_features) : weight(1.0), label(-1), qid(-1), pred(-1) {
+tupleW(int num_features) : weight(1.0), label(-1), qid(-1), pred(-1), psLabel(0){
 	features = new double[num_features+1];
 	for (int i = 0; i <= num_features; i++) 
 		features[i] = UNKNOWN;
@@ -59,6 +60,7 @@ tupleW(int num_features) : weight(1.0), label(-1), qid(-1), pred(-1) {
 		if (training) { // if this is a training set, extract label (first item)
 		  tok = strtok(line, " ");
 		  t->label = atoi(tok);
+		  t->pred = (t->label ==0) ? -1.0 : 1.0; 
 		  t->weight = 1;
 		}
 
@@ -82,8 +84,9 @@ tupleW(int num_features) : weight(1.0), label(-1), qid(-1), pred(-1) {
 
   // free memory
   static void delete_data(vector<tupleW*>& data) {
-    for (int i = 0; i < data.size(); i++)
-      delete data[i];
+    for (int i = 0; i < data.size(); i++) {
+		delete data[i];
+	}
   }
 };
 
