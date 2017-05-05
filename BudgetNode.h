@@ -34,61 +34,6 @@ public:
 		oob_c_leaf.resize(num_c,false); 
 		stopP=0.0;
 	}
-	//overload constructor for boosting
-	BudgetNode(const vector<tupleW*>& data, const args_t& myargs, int depth,  double (*impurityHandle)(vector<double>&), int* curID, int parentID) : leaf(false), feature(0), value(UNKNOWN), pred(-1), stopP(0.0), pred_double(0.0){
-		int i, ndata=data.size();
-		int maxdepth=myargs.depth, num_features=myargs.features-1;
-		double imp=0.0;
-		for (i = 0; i < CHILDTYPES; i++)
-			child[i] = 0;
-		parID=parentID;
-		ID=*curID;
-		*curID=ID+1;
-		this->depth = depth;
-		
-		c_leaf.resize(myargs.num_c,false);
-		oob_c_leaf.resize(myargs.num_c,false); 
-
-		// copy the data within the current node for parallel feature search
-		vector<vector<double>> dataMatrix(myargs.features, vector<double>(ndata,0.0)); //sample weight included as an additional feature field
-		vector<double> dataTargets(ndata,0.0);
-		for(i =0;i<ndata;i++){
-			dataTargets[i]=data[i]->pred;
-			for(int j=0;j<num_features;j++)
-				dataMatrix[j][i]=data[i]->features[j+1];
-			dataMatrix.back()[i]=data[i]->weight;
-		}
-		
-		// get prediction
-		pred_double= std::accumulate(dataTargets.begin(), dataTargets.end(),0.0)/ndata;
-		pred_double=pred_double*myargs.alpha; //multiplying learning rate
-
-		imp=(*impurityHandle)(dataTargets);
-		// check if leaf node 
-		// return if measure impurity ==0
-		if ( imp<=1e-10 || depth >= maxdepth) {
-			leaf = true;
-			return;
-		}
-		int f_split;
-		double v_split;
-		// split data into 3 parts, based on criteria found
-		vector<tupleW*> child_data[CHILDTYPES];
-		split_data_noMiss(data, child_data, f_split, v_split, myargs);
-		//printf("split: %d %f, Y:%d N:%d  M:%d\n", f_split, (float)v_split, child_data[YES].size(), child_data[NO].size(), child_data[MISSING].size());
-
-		if (!(child_data[YES].size() && child_data[NO].size())) {
-			leaf = true;
-			return;
-		}
-
-		// remember where we splitted, and recurse
-		feature = f_split;
-		value = v_split;
-		child[MISSING] = 0; //assume no missing data
-		child[YES] = new BudgetNode(child_data[YES], myargs, depth+1, impurityHandle, curID, ID);
-		child[NO] = new BudgetNode(child_data[NO], myargs, depth+1, impurityHandle, curID, ID);
-	}
 	BudgetNode(const vector<tupleW*>& data, args_t& myargs, int depth,  double (*impurityHandle)(int, vector<int>&,double), int* curID, int parentID,std::default_random_engine& gen) : leaf(false), feature(0), value(UNKNOWN), pred(-1), stopP(0.0){    
 		int i, ndata=data.size();
 		int num_c=myargs.num_c;

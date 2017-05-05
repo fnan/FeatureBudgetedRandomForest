@@ -471,39 +471,6 @@ void BudgetForest::buildLearn( data_t& train, args_t& args){
 	int nfeatures=args.features;
 	/*vector<double> currentPred(train.size(),0.0);*/
 
-	if (args.alg==ALG_BOOST_MAXSPLIT || args.alg == ALG_BOOST_EXPSPLIT){
-		double (*impurityHandle)(vector<double>&) = NULL;
-		impurityHandle= impurityDeviance;
-		vector<double> loss(args.trees,0.0);
-		alg_t originalALG=args.alg; //store it before making changes
-		for(int t=0;t<args.trees;t++){
-			int ID=0;
-			treePts[t]=new BudgetTree(1,args.num_c);
-			//if(t>9) args.alg=ALG_BOOST_EXPSPLIT; //use the expected splits after 10 trees 
-			treePts[t]->nodePts[0]=new BudgetNode(train, args, 1, impurityHandle, &ID, -1);
-			treePts[t]->nNodes=ID;
-			treePts[t]->updateNodePts();
-			treePts[t]->updateLeafindex(train);
-//			retrainWeights(train,  t+1, args); //logistic regression to re-train the weights
-			//args.alg=originalALG; //restore original alg
-			/*vector<double> pred(train.size(),0.0);
-			treePts[t]->predSimple(train, args, pred); 
-			std::transform(currentPred.begin(),currentPred.end(), pred.begin(),currentPred.begin(), std::plus<double>());*/
-			vector<double> currentPred(train.size(),0.0);
-			for(int i=0;i<=t;i++){
-				vector<double> pred(train.size(),0.0);
-				treePts[i]->getLeafPred(pred);
-				std::transform(currentPred.begin(),currentPred.end(), pred.begin(),currentPred.begin(), std::plus<double>());
-			}
-			int errCount=0;
-			for(int i=0;i<train.size();i++)
-				if((currentPred[i]<0 && train[i]->label == 1) ||(currentPred[i]>=0 && train[i]->label ==0))
-					errCount++;
-			logLoss(train, currentPred, loss[t]); //update targets in data
-			cout<< t+1 << "trees: loss = " << loss[t] <<", error = "<<(double)errCount/train.size()<<endl;
-		}
-	}
-	else{
 		if (numthreads > nTrees)
 			numthreads = nTrees;
 		nTrees = (nTrees / numthreads) * numthreads;
@@ -531,7 +498,7 @@ void BudgetForest::buildLearn( data_t& train, args_t& args){
 				k++;
 			}
 		}
-	}
+
 	for(i=0;i<nTrees;i++)
 		nNodes[i]=treePts[i]->nNodes;
 }
