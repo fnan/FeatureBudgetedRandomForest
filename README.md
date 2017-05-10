@@ -83,8 +83,10 @@ Required libraries:
 
 
 ## data_input_file format: 
-### Classification - each line represent an example, label comes in the first column, followed by featureID:featureValue with white spaces in between.
-### Ranking - each line represent an query-document example, rank label comes in the first column, followed by qid:(query ID), followed by featureID:featureValue with white spaces in between.
+### Classification: 
+each line represent an example, label comes in the first column, followed by featureID:featureValue with white spaces in between.
+### Ranking: 
+each line represent an query-document example, rank label comes in the first column, followed by qid:(query ID), followed by featureID:featureValue with white spaces in between.
 
 ## cost vector input file format:
 Cost of each feature appears in each row. Number of rows equal number of features.
@@ -95,24 +97,32 @@ Suppose Sensor1 has acquisition cost of 0.1 and produces 2 features; Sensor2 has
 The data input thus has 5 features (training matrix size = n x 5, n is the number of data points).  
 The cost input file for the -c option should look like:
 0.1
+
 0.1
+
 0.2
+
 0.2
+
 0.2
 
 The costgroup file should be:
 1
+
 1
+
 2
+
 2
+
 2
 
 
 # OUTPUTS:
 1. Expected error for classification or precision for ranking + expected feature cost.
-..* errPrec1: predict test example label for each tree using training data distribution at the corresponding leaf, take majority label as final prediction.
-..* errPrec2: predict test example label for each tree using out-of-bag data distribution at the corresponding leaf, take majority label as final prediction.
-..* errPrec3: cumulate training data distributions at the corresponding leaves for all trees, take label with highest probability
+  * errPrec1: predict test example label for each tree using training data distribution at the corresponding leaf, take majority label as final prediction.
+  * errPrec2: predict test example label for each tree using out-of-bag data distribution at the corresponding leaf, take majority label as final prediction.
+  * errPrec3: cumulate training data distributions at the corresponding leaves for all trees, take label with highest probability
 
 2. featMatrix files: contains the feature usage matrix: (i,j)th element is the number of times example i uses feature j.
 
