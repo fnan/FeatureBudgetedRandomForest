@@ -96,27 +96,21 @@ For example, suppose there are only 2 sensors. Each sensor gives a multi-dimensi
 Suppose Sensor1 has acquisition cost of 0.1 and produces 2 features; Sensor2 has acquisition cost of 0.2 and produces 3 features. 
 The data input thus has 5 features (training matrix size = n x 5, n is the number of data points).  
 The cost input file for the -c option should look like:
+```
 0.1
-
 0.1
-
 0.2
-
 0.2
-
 0.2
-
+```
 The costgroup file should be:
+```
 1
-
 1
-
 2
-
 2
-
 2
-
+```
 
 # OUTPUTS:
 1. Expected error for classification or precision for ranking + expected feature cost.
